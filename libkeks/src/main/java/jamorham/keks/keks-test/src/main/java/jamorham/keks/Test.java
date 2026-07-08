@@ -30,7 +30,10 @@ public class Test {
         }
 
         context.keyA = KeyPair.fromPrivateKey(keyAHex);
+        System.out.println("keyA:" + context.keyA.getPrivateKey().toString(16));
+
         context.KeyB = KeyPair.fromPrivateKey(keyBHex);
+        System.out.println("keyB:" + context.KeyB.getPrivateKey().toString(16));
 
         String userDataHex1 = args[arg++].replaceAll("\\s+", ""); // remove spaces if any
 
@@ -101,14 +104,14 @@ public class Test {
         System.out.println("\nreceived round3 packet");
         data = hexToBytes(userDataHex3);
         packet = Packet.parse(data);
-        context.packet[2] = packet;
+        context.packet[3] = packet;
 
         context.exponent = new BigInteger(exponentHex3, 16);
 
         Calc.validateRound3Packet(context);
         output = Calc.getRound3Packet(context);
         System.out.println("round3 packet:" + bytesToHex(output.output()));
-        System.out.println("shared key:" + Calc.getSharedKey(context));
+        System.out.println("shared key:" + bytesToHex(Calc.getSharedKey(context)));
     }
 
     private static byte[] hexToBytes(String hex) {

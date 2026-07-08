@@ -67,17 +67,37 @@ public class Calc {
 
     public static Packet getRound3Packet(final Context context) {
         val packet1 = context.getRound1Packet();
+    
         val packet2 = context.getRound2Packet();
+    
         val x1 = context.keyA.getPublicKey();
+    
         val x2 = context.KeyB.getPrivateKey();
+    
         val x3 = packet1.getPublicKeyPoint1();
+    
         val x4 = packet2.getPublicKeyPoint1();
+    
         val s = context.getPasswordBigInteger();
+    
         val x2s = x2.multiply(s).mod(Curve.Q);
+    
         val x134 = x1.add(x3).add(x4).normalize();
+    
         val A = x134.multiply(x2s).normalize();
+    
         val zkp = new ZKP(x134, new KeyPair(x2s, A), context.alice);
-        return new Packet(zkp.getProof(), A, zkp.getGv());
+
+        if (context.useExponent) {
+            zkp.setExponent(context.exponent);
+        }
+    
+        val proof = zkp.getProof();
+        val gv = zkp.getGv();
+    
+        val packet = new Packet(proof, A, gv);
+    
+        return packet;
     }
 
     public static boolean validateRound3Packet(final Context context) {
@@ -92,49 +112,29 @@ public class Calc {
     }
 
     public static byte[] getSharedKey(final Context context) {
-        System.out.println("getSharedKey: starting calculation");
-
         if (context.getRound3Packet() == null) {
           System.out.println("getSharedKey: round3Packet is null - returning null");
           return null;
         }
 
         val point1 = context.getRound3Packet().getPublicKeyPoint1();
-        System.out.println("getSharedKey: point1 = " + point1.getXCoord() + "," + point1.getYCoord());
-
         val x2 = context.KeyB.getPrivateKey();
-        System.out.println("getSharedKey: x2 (privateKey B) = " + x2);
-
         val x4 = context.getRound2Packet().getPublicKeyPoint1();
-        System.out.println("getSharedKey: x4 = " + x4.getXCoord() + "," + x4.getYCoord());
-
         val s = context.getPasswordBigInteger();
-        System.out.println("getSharedKey: s (password) = " + s);
 
-        // x2 * s mod Q
         val x2s = x2.multiply(s).mod(Curve.Q);
-        System.out.println("getSharedKey: x2s = x2 * s mod Q = " + x2s);
-
-        // x4 * x2s
         val gx4X2s = x4.multiply(x2s);
-        System.out.println("getSharedKey: gx4X2s = x4 * x2s = " + gx4X2s.getXCoord() + "," + gx4X2s.getYCoord());
 
-        // point1 - gx4X2s
         val temp = point1.subtract(gx4X2s);
-        System.out.println("getSharedKey: temp = point1 - gx4X2s = " + temp.getXCoord() + "," + temp.getYCoord());
-
-        // temp * x2
         val keyPoint = temp.multiply(x2).normalize();
-        System.out.println("getSharedKey: keyPoint = temp * x2 = " + keyPoint.getXCoord() + "," + keyPoint.getYCoord());
 
         // Extract X coordinate
         val xBytes = keyPoint.getXCoord().getEncoded();
-        System.out.println("getSharedKey: xBytes = " + bytesToHex(xBytes));
 
         // Final SHA-256 hash
         val sharedKey = SHA256.hash(xBytes);
-        System.out.println("getSharedKey: calculated shared key = " + bytesToHex(sharedKey));
 
+        System.out.println("getSharedKey: calculated shared key = " + bytesToHex(sharedKey));
         return sharedKey;
     }
 
