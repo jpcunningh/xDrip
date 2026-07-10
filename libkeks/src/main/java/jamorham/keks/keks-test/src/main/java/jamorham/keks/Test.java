@@ -13,8 +13,8 @@ public class Test {
         Context context = new Context();
         int arg = 0;
 
-        if (args.length != 9) {
-            System.out.println("Usage: java Test <txid> <keyA_hex> <keyB_hex> <userData1> <exponent_hex> <userData2> <exponent_hex> <userData3> <exponent_hex>");
+        if (args.length != 10) {
+            System.out.println("Usage: java Test <txid> <keyA_hex> <keyB_hex> <userData1> <exponent_hex> <userData2> <exponent_hex> <userData3> <exponent_hex> <cert packet 1>");
             return;
         }
 
@@ -74,6 +74,12 @@ public class Test {
             return;
         }
 
+        String certPacket1 = args[arg++].replaceAll("\\s+", "");
+        if (certPacket1.length() != 984) {
+            System.err.println("Error: Cert Packet 1 " + certPacket1.length()/2 + "B - must be 492 bytes (984 hex characters)");
+            return;
+        }
+
         context.alice = ALICE.bytes;
         context.bob = BOB.bytes;
 
@@ -112,6 +118,9 @@ public class Test {
         output = Calc.getRound3Packet(context);
         System.out.println("round3 packet:" + bytesToHex(output.output()));
         System.out.println("shared key:" + bytesToHex(Calc.getSharedKey(context)));
+
+        data = hexToBytes(certPacket1);
+        packet = Packet.parse(data);
     }
 
     private static byte[] hexToBytes(String hex) {

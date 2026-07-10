@@ -19,6 +19,8 @@ public class JECPoint {
     private final ECPoint point;
 
     static ECPoint pointFromBytes(final byte[] xBytes, final byte[] yBytes) {
+        ECPoint returnVal = Curve.curve.createPoint(fromUnsignedByteArray(xBytes), fromUnsignedByteArray(yBytes));
+        System.out.println("ECPoint is " + (returnVal.isValid() ? "VALID" : "NOT VALID"));
         return (Curve.curve.createPoint(fromUnsignedByteArray(xBytes), fromUnsignedByteArray(yBytes)));
     }
 
