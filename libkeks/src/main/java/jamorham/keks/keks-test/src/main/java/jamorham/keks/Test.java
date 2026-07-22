@@ -13,8 +13,8 @@ public class Test {
         Context context = new Context();
         int arg = 0;
 
-        if (args.length != 10) {
-            System.out.println("Usage: java Test <txid> <keyA_hex> <keyB_hex> <userData1> <exponent_hex> <userData2> <exponent_hex> <userData3> <exponent_hex> <cert packet 1>");
+        if (args.length < 5) {
+            System.out.println("Usage: java Test <txid> <keyA_hex> <keyB_hex> <userData1> <exponent_hex> <userData2> <exponent_hex> <userData3> <exponent_hex> <cert packet 1> <partC> <challenge>" + args.length);
             return;
         }
 
@@ -48,36 +48,49 @@ public class Test {
             return;
         }
 
-        String userDataHex2 = args[arg++].replaceAll("\\s+", ""); // remove spaces if any
+        String userDataHex2 = "", exponentHex2 = "";
+        if (args.length > arg) {
+            userDataHex2 = args[arg++].replaceAll("\\s+", ""); // remove spaces if any
 
-        if (userDataHex2.length() != 320) {
-            System.err.println("Error: Must provide exactly 160 bytes for userDataHex2 (320 hex characters)");
-            return;
+            if (userDataHex2.length() != 320) {
+                System.err.println("Error: Must provide exactly 160 bytes for userDataHex2 (320 hex characters)");
+                return;
+            }
+
+            exponentHex2 = args[arg++].replaceAll("\\s+", "");
+            if (exponentHex2.length() != 64) {
+                System.err.println("Error: Exponent must be 32 bytes (64 hex characters)");
+                return;
+            }
         }
 
-        String exponentHex2 = args[arg++].replaceAll("\\s+", "");
-        if (exponentHex2.length() != 64) {
-            System.err.println("Error: Exponent must be 32 bytes (64 hex characters)");
-            return;
+        String userDataHex3 = "", exponentHex3 = "";
+        if (args.length > arg) {
+            userDataHex3 = args[arg++].replaceAll("\\s+", ""); // remove spaces if any
+
+            if (userDataHex3.length() != 320) {
+                System.err.println("Error: Must provide exactly 160 bytes for userDataHex3 (320 hex characters)");
+                return;
+            }
+
+            exponentHex3 = args[arg++].replaceAll("\\s+", "");
+            if (exponentHex3.length() != 64) {
+                System.err.println("Error: Exponent must be 32 bytes (64 hex characters)");
+                return;
+            }
         }
 
-        String userDataHex3 = args[arg++].replaceAll("\\s+", ""); // remove spaces if any
+        String partCHex = "", challengeHex = "", certPacket1 = "";
+        if (args.length > arg) {
+            partCHex = args[arg++].replaceAll("\\s+", "");
 
-        if (userDataHex3.length() != 320) {
-            System.err.println("Error: Must provide exactly 160 bytes for userDataHex3 (320 hex characters)");
-            return;
-        }
+            challengeHex = args[arg++].replaceAll("\\s+", "");
 
-        String exponentHex3 = args[arg++].replaceAll("\\s+", "");
-        if (exponentHex3.length() != 64) {
-            System.err.println("Error: Exponent must be 32 bytes (64 hex characters)");
-            return;
-        }
-
-        String certPacket1 = args[arg++].replaceAll("\\s+", "");
-        if (certPacket1.length() != 984) {
-            System.err.println("Error: Cert Packet 1 " + certPacket1.length()/2 + "B - must be 492 bytes (984 hex characters)");
-            return;
+            certPacket1 = args[arg++].replaceAll("\\s+", "");
+            if (certPacket1.length() != 984) {
+                System.err.println("Error: Cert Packet 1 " + certPacket1.length()/2 + "B - must be 492 bytes (984 hex characters)");
+                return;
+            }
         }
 
         context.alice = ALICE.bytes;
@@ -96,31 +109,43 @@ public class Test {
         Packet output = Calc.getRound1Packet(context);
         System.out.println("round1 packet:" + bytesToHex(output.output()));
 
-        System.out.println("\nreceived round2 packet");
-        data = hexToBytes(userDataHex2);
-        packet = Packet.parse(data);
-        context.packet[2] = packet;
+        if (args.length >= 6) {
+            System.out.println("\nreceived round2 packet");
+            data = hexToBytes(userDataHex2);
+            packet = Packet.parse(data);
+            context.packet[2] = packet;
 
-        context.exponent = new BigInteger(exponentHex2, 16);
+            context.exponent = new BigInteger(exponentHex2, 16);
 
-        Calc.validateRound2Packet(context);
-        output = Calc.getRound2Packet(context);
-        System.out.println("round2 packet:" + bytesToHex(output.output()));
+            Calc.validateRound2Packet(context);
+            output = Calc.getRound2Packet(context);
+            System.out.println("round2 packet:" + bytesToHex(output.output()));
+        }
 
-        System.out.println("\nreceived round3 packet");
-        data = hexToBytes(userDataHex3);
-        packet = Packet.parse(data);
-        context.packet[3] = packet;
+        if (args.length >= 8) {
+            System.out.println("\nreceived round3 packet");
+            data = hexToBytes(userDataHex3);
+            packet = Packet.parse(data);
+            context.packet[3] = packet;
 
-        context.exponent = new BigInteger(exponentHex3, 16);
+            context.exponent = new BigInteger(exponentHex3, 16);
 
-        Calc.validateRound3Packet(context);
-        output = Calc.getRound3Packet(context);
-        System.out.println("round3 packet:" + bytesToHex(output.output()));
-        System.out.println("shared key:" + bytesToHex(Calc.getSharedKey(context)));
+            Calc.validateRound3Packet(context);
+            output = Calc.getRound3Packet(context);
+            System.out.println("round3 packet:" + bytesToHex(output.output()));
+            System.out.println("shared key:" + bytesToHex(Calc.getSharedKey(context)));
+        }
 
-        data = hexToBytes(certPacket1);
-        packet = Packet.parse(data);
+        if (args.length >= 10) {
+            data = hexToBytes(certPacket1);
+            packet = Packet.parse(data);
+
+            data = hexToBytes(partCHex);
+            byte[] challenge = hexToBytes(challengeHex);
+
+            byte[] outputData = Calc.challenger(data, challenge);
+            System.out.println("challenge response:" + bytesToHex(outputData));
+        }
     }
 
     private static byte[] hexToBytes(String hex) {

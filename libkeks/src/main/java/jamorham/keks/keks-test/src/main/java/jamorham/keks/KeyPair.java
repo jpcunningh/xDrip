@@ -68,7 +68,13 @@ public class KeyPair {
     public static PrivateKey fromBytes(byte[] privateBytes) {
         try {
             val ecKeyFac = new KeyFactorySpi.EC();
-            return ecKeyFac.generatePrivate(PrivateKeyInfo.getInstance(privateBytes));
+            val key = ecKeyFac.generatePrivate(PrivateKeyInfo.getInstance(privateBytes));
+
+            System.out.println("Private key: " + ((java.security.interfaces.ECPrivateKey) key)
+              .getS()
+              .toString(16));
+
+            return key;
         } catch (Exception e) {
             Log.l("Failure to generate Key from bytes array");
         }
